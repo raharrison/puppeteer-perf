@@ -1,0 +1,19 @@
+{
+    "name": "puppeteer-perf",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "deep-map": "^2.0.0",
+        "es6-weak-map": "^2.0.3",
+        "handlebars": "^4.1.2",
+        "lodash": "^4.17.15",
+        "puppeteer": "^1.18.1",
+        "sqlite3": "^4.0.9"
+    }
+}
