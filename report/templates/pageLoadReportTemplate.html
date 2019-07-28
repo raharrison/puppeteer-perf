@@ -7,7 +7,7 @@
             content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
 
-        <title>Dashboard Template for Bootstrap</title>
+        <title>Page Load Report</title>
 
         <link
             rel="stylesheet"
@@ -23,8 +23,8 @@
 
     <body>
         <div class="container">
-            <main class="row">
-                <div class="col">
+            <div class="row">
+                <div class="col-sm-6">
                     <h2>Timing Metrics</h2>
                     <div class="table-responsive">
                         <table class="table table-striped table-sm">
@@ -50,8 +50,8 @@
                     </div>
                 </div>
 
-                <div class="col">
-                    <h2>Tracing Metrics</h2>
+                <div class="col-sm-6">
+                    <h2>Request Summary</h2>
                     <div class="table-responsive">
                         <table class="table table-striped table-sm table-hover">
                             <thead>
@@ -63,25 +63,76 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{#tracingDiff}}
+                                {{#tracingDiff.overview}}
                                 <tr class="{{tableRowClass changePercent}}">
                                     <td>{{friendlyName metric}}</td>
                                     <td>{{ previous }}</td>
                                     <td>{{ current }}</td>
                                     <td>{{{toPercentBadge changePercent}}}</td>
                                 </tr>
-                                {{/tracingDiff}}
+                                {{/tracingDiff.overview}}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
 
-        <script
-            src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-            crossorigin="anonymous"
-        ></script>
+            {{#tracingDiff.typeOverview}}
+            <div class="row mt-3">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">{{friendlyName type}} Requests</h3>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>Previous</th>
+                                            <th>Current</th>
+                                            <th>% Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#summary}}
+                                        <tr class="{{tableRowClass changePercent}}">
+                                            <td>{{friendlyName metric}}</td>
+                                            <td>{{ previous }}</td>
+                                            <td>{{ current }}</td>
+                                            <td>{{{toPercentBadge changePercent}}}</td>
+                                        </tr>
+                                        {{/summary}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{#breakdown}}
+                            <h5>{{friendlyName metric}}</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>URL</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#current}}
+                                        <tr class="{{tableRowClass changePercent}}">
+                                            <td>{{@index}}</td>
+                                            <td>{{limit url 100 }}</td>
+                                            <td>{{ value }} {{ unit }}</td>
+                                        </tr>
+                                        {{/current}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{/breakdown}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{/tracingDiff.typeOverview}}
+        </div>
     </body>
 </html>

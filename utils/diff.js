@@ -262,10 +262,7 @@ function diffMetrics(previous, current) {
     Object.keys(current).forEach(k => {
         if (typeof current[k] === "number") {
             diff[k] = diffNumber(previous[k], current[k]);
-        } else if (
-            typeof current[k] === "object" &&
-            !(current[k] instanceof Array)
-        ) {
+        } else if (typeof current[k] === "object" && !(current[k] instanceof Array)) {
             diff[k] = diffMetrics(previous[k], current[k]);
         }
     });
@@ -280,5 +277,5 @@ module.exports = {
     diffMetrics
 };
 
-// const res = diffMetrics(previousTimings, currentTimings);
+// const res = diffMetrics(previousTracing, currentTracing);
 // console.log(JSON.stringify(res, null, 2));
