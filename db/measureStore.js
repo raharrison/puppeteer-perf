@@ -98,7 +98,7 @@ module.exports = {
                 testName,
                 (err, row) => {
                     if (err) return reject(err.message);
-                    if (!row) return row;
+                    if (!row) return resolve(row);
 
                     resolve({
                         id: row.id,

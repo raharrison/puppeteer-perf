@@ -99,16 +99,24 @@ function constructReportData(
 }
 
 function generatePageLoadReport(previousRunData, currentRunData) {
+    console.log(
+        "Generating load time report for previous run id: " +
+            previousRunData.id +
+            " and current id: " +
+            currentRunData.id
+    );
     const res = constructReportData(
-        diff.previousTimings,
-        diff.currentTimings,
-        diff.previousTracing,
-        diff.currentTracing
+        previousRunData.timings,
+        currentRunData.timings,
+        previousRunData.tracing,
+        currentRunData.tracing
     );
     const template = buildTemplate("pageLoadReportTemplate.html");
     const doc = template(res);
-    fs.writeFileSync("generated/output.html", doc);
-    console.log(JSON.stringify(res, null, 2));
+    fs.writeFileSync("generated/pageLoad.html", doc);
+    // console.log(JSON.stringify(res, null, 2));
 }
 
-generatePageLoadReport();
+module.exports = {
+    generatePageLoadReport
+};

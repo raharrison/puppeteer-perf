@@ -3,6 +3,7 @@ const metricsExtract = require("../extract/metricsExtract");
 const tracingExtract = require("../extract/traceExtract");
 const measureStore = require("../db/measureStore");
 const normalize = require("../utils/normalize");
+const reporter = require("../report/pageLoadReporter");
 
 const TRACING_LOCATION = "./trace.json";
 
@@ -15,9 +16,7 @@ async function initPage(browser) {
 }
 
 async function captureWindowTimings(page) {
-    const timings = await page.evaluate(() =>
-        JSON.stringify(window.performance.timing)
-    );
+    const timings = await page.evaluate(() => JSON.stringify(window.performance.timing));
     return metricsExtract.extractMeasuresFromWindowMetrics(JSON.parse(timings));
 }
 
@@ -26,9 +25,7 @@ async function capturePerformanceMetrics(page, client) {
     while (true) {
         await page.waitFor(300);
         const metrics = await client.send("Performance.getMetrics");
-        performanceMetrics = metricsExtract.extractMeasuresFromPerfMetrics(
-            metrics
-        );
+        performanceMetrics = metricsExtract.extractMeasuresFromPerfMetrics(metrics);
         if (performanceMetrics.FirstMeaningfulPaint > 0) break;
         else {
             console.log("Waiting for data...");
@@ -63,11 +60,11 @@ const processPerfData = async (
         tracing: normalize.deepRound(tracingMetrics)
     };
 
-    const previousRunData =
-        (await measureStore.getLastResult(testName)) || runData;
+    const previousRunData = (await measureStore.getLastResult(testName)) || runData;
     await measureStore.reportData(runData);
-    console.log("Previous id is " + previousRunData.id);
-    console.log("Saved id is " + runData.id);
+    console.log("Saved run details id: " + runData.id);
+
+    reporter.generatePageLoadReport(previousRunData, runData);
     return runData;
 };
 
@@ -76,16 +73,17 @@ module.exports = {
         const { page, client } = await initPage(browser);
         await page.tracing.start({ path: TRACING_LOCATION });
 
+        console.log("Loading url: " + url);
         await page.goto(url);
 
         await page.tracing.stop();
 
+        console.log("URL loaded, capturing metrics...");
         const windowTimings = await captureWindowTimings(page);
-        const performanceMetrics = await capturePerformanceMetrics(
-            page,
-            client
-        );
+        const performanceMetrics = await capturePerformanceMetrics(page, client);
         const tracingMetrics = await captureTracingMetrics();
+
+        console.log("Metrics captured, processing...");
 
         return await processPerfData(
             testName,
