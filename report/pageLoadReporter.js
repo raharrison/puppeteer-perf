@@ -129,6 +129,10 @@ function generatePageLoadReport(previousRunData, currentRunData) {
         previousRunData.tracing,
         currentRunData.tracing
     );
+    res.testName = currentRunData.testName;
+    res.url = currentRunData.url;
+    res.currentRunTime = currentRunData.runTime;
+    res.previousRunTime = currentRunData.runTime;
     const template = buildTemplate("pageLoadReportTemplate.html");
     const doc = template(res);
     fs.writeFileSync("generated/pageLoad.html", doc);
