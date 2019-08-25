@@ -16,8 +16,8 @@ Handlebars.registerHelper("toPercentBadge", e => {
     const rounded = Math.round(e);
     const value = rounded > 0 ? "+" + rounded : rounded;
     let klass = "badge badge-primary";
-    if (e < 0) klass = "badge badge-success";
-    else if (e > 0) klass = "badge badge-danger";
+    if (rounded < 0) klass = "badge badge-success";
+    else if (rounded > 0) klass = "badge badge-danger";
 
     return `<span class="${klass}">${value}%</span>`;
 });
@@ -98,6 +98,24 @@ function constructReportData(
     };
 }
 
+function removeNotAllowedFields(data) {
+    const notAllowed = [
+        "dnsLookup",
+        "tcpConnect",
+        "request",
+        "response",
+        "pageLoad",
+        "domLoaded",
+        "domInteractive"
+    ];
+    return Object.keys(data)
+        .filter(key => !notAllowed.includes(key))
+        .reduce((obj, key) => {
+            obj[key] = data[key];
+            return obj;
+        }, {});
+}
+
 function generatePageLoadReport(previousRunData, currentRunData) {
     console.log(
         "Generating load time report for previous run id: " +
@@ -106,8 +124,8 @@ function generatePageLoadReport(previousRunData, currentRunData) {
             currentRunData.id
     );
     const res = constructReportData(
-        previousRunData.timings,
-        currentRunData.timings,
+        removeNotAllowedFields(previousRunData.timings),
+        removeNotAllowedFields(currentRunData.timings),
         previousRunData.tracing,
         currentRunData.tracing
     );
