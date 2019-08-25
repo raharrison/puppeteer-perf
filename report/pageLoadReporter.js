@@ -22,16 +22,15 @@ Handlebars.registerHelper("toPercentBadge", e => {
     return `<span class="${klass}">${value}%</span>`;
 });
 
+Handlebars.registerHelper("dateFormat", t => {
+    // from unix timestamp
+    return new Date(t).toLocaleString();
+});
+
 const buildTemplate = name => {
     const src = fs.readFileSync(`report/templates/${name}`, "utf8");
     return Handlebars.compile(src);
 };
-
-const currentDateStr = () =>
-    new Date()
-        .toISOString()
-        .replace(/:|-|T|\./g, "")
-        .slice(0, 14);
 
 function buildRequestTypeSummary(tracingData) {
     const breakdown = {};
@@ -132,7 +131,7 @@ function generatePageLoadReport(previousRunData, currentRunData) {
     res.testName = currentRunData.testName;
     res.url = currentRunData.url;
     res.currentRunTime = currentRunData.runTime;
-    res.previousRunTime = currentRunData.runTime;
+    res.previousRunTime = previousRunData.runTime;
     const template = buildTemplate("pageLoadReportTemplate.html");
     const doc = template(res);
     fs.writeFileSync("generated/pageLoad.html", doc);

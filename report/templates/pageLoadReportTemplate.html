@@ -24,10 +24,11 @@
     <body>
         <div class="container mt-4">
             <h1 class="mb-4">Page Load Performance: '{{ testName }}'</h1>
-            <p>
-                Url: {{ url }}, Current Report Date: {{ currentRunTime }}, Previous Report
-                Date: {{ previousRunTime }}
-            </p>
+            <ul>
+                <li>URL: {{ url }}</li>
+                <li>Current Report Date: {{dateFormat currentRunTime }}</li>
+                <li>Previous Report Date: {{dateFormat previousRunTime }}</li>
+            </ul>
             <ul class="nav nav-pills nav-fill" id="navTabs" role="tablist">
                 <li class="nav-item">
                     <a
@@ -82,6 +83,12 @@
                                                         <td>{{ current }}</td>
                                                         <td>
                                                             {{{toPercentBadge changePercent
+
+
+
+
+
+
 
 
 
@@ -154,6 +161,12 @@
 
 
 
+
+
+
+
+
+
                                                             }}}
                                                         </td>
                                                     </tr>
@@ -205,6 +218,12 @@
                                                         <td>{{ current }}</td>
                                                         <td>
                                                             {{{toPercentBadge changePercent
+
+
+
+
+
+
 
 
 
