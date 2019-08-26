@@ -130,5 +130,35 @@ module.exports = {
             );
 
             await closeConnection(db);
+        }),
+
+    getRequestTypeTrend: testName =>
+        new Promise(async (resolve, reject) => {
+            let db = await openConnection();
+            db.all(
+                `SELECT id,testName,runTime,requestsReport FROM load_measure WHERE testName = ? ORDER BY runTime DESC LIMIT 20`,
+                testName,
+                (err, rows) => {
+                    if (err) return reject(err.message);
+                    const trends = {};
+                    rows.reverse().map(e => {
+                        const report = JSON.parse(e.requestsReport);
+                        for (const key of Object.keys(report)) {
+                            if (!(key in trends)) trends[key] = [];
+                            trends[key].push({
+                                id: e.id,
+                                runTime: e.runTime,
+                                numberRequests: report[key].numberRequests,
+                                totalEncodedSize: report[key].totalEncodedSize,
+                                totalDecodedSize: report[key].totalDecodedSize,
+                                totalRequestDuration: report[key].totalRequestDuration
+                            });
+                        }
+                    });
+                    resolve(trends);
+                }
+            );
+
+            await closeConnection(db);
         })
 };

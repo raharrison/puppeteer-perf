@@ -66,11 +66,11 @@ function buildRequestTypeSummary(tracingData) {
     return breakdown;
 }
 
-async function constructTrendChart(testName, id, title, metrics) {
+async function constructTrendChart(testName, chartId, title, metrics, data = null) {
     const datasets = [];
     let labels;
     for (const metric of metrics) {
-        const rawData = await measureStore.getMetricTrend(testName, metric);
+        const rawData = data || (await measureStore.getMetricTrend(testName, metric));
         labels = rawData.map(e => e.id);
         datasets.push({
             label: metric,
@@ -78,7 +78,7 @@ async function constructTrendChart(testName, id, title, metrics) {
         });
     }
     const chart = {
-        chartId: id,
+        chartId: chartId,
         chartTitle: title,
         xData: labels,
         datasets: datasets
@@ -89,7 +89,7 @@ async function constructTrendChart(testName, id, title, metrics) {
     return chart;
 }
 
-async function buildTrendCharts(testName) {
+async function buildOverviewTrendCharts(testName) {
     const timingChart = await constructTrendChart(
         testName,
         "timingTrends",
@@ -111,6 +111,30 @@ async function buildTrendCharts(testName) {
     return [timingChart, requestChart, metricChart];
 }
 
+async function buildRequestTypeTrends(testName) {
+    const rawData = await measureStore.getRequestTypeTrend(testName);
+    const trends = {};
+    for (const key of Object.keys(rawData)) {
+        trends[key] = [
+            await constructTrendChart(
+                testName,
+                key + "TimingTrends",
+                "Timing Trends (ms)",
+                ["totalRequestDuration"],
+                rawData[key]
+            ),
+            await constructTrendChart(
+                testName,
+                key + "RequestTrends",
+                "Request Trends (KB)",
+                ["totalEncodedSize", "totalDecodedSize"],
+                rawData[key]
+            )
+        ];
+    }
+    return trends;
+}
+
 async function constructReportData(
     testName,
     previousTiming,
@@ -127,7 +151,9 @@ async function constructReportData(
     const previousRequestTypeSummary = buildRequestTypeSummary(previousTracing);
     const currentRequestTypeSummary = buildRequestTypeSummary(currentTracing);
 
-    const trends = await buildTrendCharts(testName);
+    const overviewTrends = await buildOverviewTrendCharts(testName);
+
+    const requestTypeTrends = await buildRequestTypeTrends(testName);
 
     // split between overview metrics and mime type specific
     const overview = Object.entries(tracingDiff)
@@ -147,7 +173,8 @@ async function constructReportData(
                         current: currentRequestTypeSummary[type][metric]
                     };
                 }
-            )
+            ),
+            trends: requestTypeTrends[type]
         }));
 
     return {
@@ -157,7 +184,7 @@ async function constructReportData(
             overview,
             typeOverview
         },
-        trends
+        overviewTrends
     };
 }
 

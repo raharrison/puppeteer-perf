@@ -1,5 +1,7 @@
 <script>
-    var config = {
+    var ctx = document.getElementById("{{ chartId }}").getContext("2d");
+
+    new Chart(ctx, {
         type: "line",
         data: {
             labels: [{{ xData }}],
@@ -38,8 +40,5 @@
                 ]
             }
         }
-    };
-
-    var ctx = document.getElementById("{{ chartId }}").getContext("2d");
-    window.myLine = new Chart(ctx, config);
+    });
 </script>

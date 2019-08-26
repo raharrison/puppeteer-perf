@@ -176,11 +176,11 @@
                                 </div>
                             </div>
                         </div>
-                        {{#trends}}
+                        {{#overviewTrends}}
                         <div class="row mt-3">
                             <canvas id="{{ chartId }}"></canvas>
                         </div>
-                        {{/trends}}
+                        {{/overviewTrends}}
                     </div>
                 </div>
 
@@ -314,6 +314,11 @@
                                 </div>
                             </div>
                         </div>
+                        {{#trends}}
+                        <div class="row mt-3">
+                            <canvas id="{{ chartId }}"></canvas>
+                        </div>
+                        {{/trends}}
                     </div>
                 </div>
                 {{/tracingDiff.typeOverview}}
@@ -336,8 +341,14 @@
             };
         </script>
 
-        {{#trends}}
+        {{#overviewTrends}}
             {{{ script }}}
-        {{/trends}}
+        {{/overviewTrends}}
+
+        {{#tracingDiff.typeOverview}}
+            {{#trends}}
+                {{{ script }}}
+            {{/trends}}
+        {{/tracingDiff.typeOverview}}
     </body>
 </html>
