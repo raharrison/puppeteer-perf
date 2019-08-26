@@ -58,7 +58,7 @@ const processPerfData = async (
         url,
         runTime: new Date().getTime(),
         timings: timingMetrics,
-        metrics: performanceMetrics.perfMetrics,
+        metrics: normalize.normalizeMetrics(performanceMetrics.perfMetrics),
         tracing: normalize.deepRound(tracingMetrics)
     };
 
