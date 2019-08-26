@@ -21,17 +21,18 @@ async function captureWindowTimings(page) {
 }
 
 async function capturePerformanceMetrics(page, client) {
-    let performanceMetrics;
+    let perfTimings, perfMetrics;
     while (true) {
         await page.waitFor(300);
         const metrics = await client.send("Performance.getMetrics");
-        performanceMetrics = metricsExtract.extractMeasuresFromPerfMetrics(metrics);
-        if (performanceMetrics.FirstMeaningfulPaint > 0) break;
+        perfTimings = metricsExtract.extractTimingsFromPerfMetrics(metrics);
+        perfMetrics = metricsExtract.extractMeasuresFromPerfMetrics(metrics);
+        if (perfTimings.FirstMeaningfulPaint > 0) break;
         else {
             console.log("Waiting for data...");
         }
     }
-    return performanceMetrics;
+    return { perfTimings, perfMetrics };
 }
 
 async function captureTracingMetrics() {
@@ -49,7 +50,7 @@ const processPerfData = async (
 ) => {
     const timingMetrics = normalize.normalizeMetrics({
         ...windowTimings,
-        ...performanceMetrics
+        ...performanceMetrics.perfTimings
     });
 
     const runData = {
@@ -57,6 +58,7 @@ const processPerfData = async (
         url,
         runTime: new Date().getTime(),
         timings: timingMetrics,
+        metrics: performanceMetrics.perfMetrics,
         tracing: normalize.deepRound(tracingMetrics)
     };
 
@@ -80,7 +82,7 @@ module.exports = {
 
         console.log("URL loaded, capturing metrics...");
         const windowTimings = await captureWindowTimings(page);
-        const performanceMetrics = await capturePerformanceMetrics(page, client);
+        const perfMetrics = await capturePerformanceMetrics(page, client);
         const tracingMetrics = await captureTracingMetrics();
 
         console.log("Metrics captured, processing...");
@@ -89,7 +91,7 @@ module.exports = {
             testName,
             url,
             windowTimings,
-            performanceMetrics,
+            perfMetrics,
             tracingMetrics
         );
     }

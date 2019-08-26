@@ -5,12 +5,13 @@ const Handlebars = require("handlebars");
 Handlebars.registerHelper("limit", (e, max) => e && e.slice(0, max || 100));
 
 Handlebars.registerHelper("tableRowClass", e => {
-    return !e || Math.abs(e) < 5 ? "" : e < 0 ? "table-success " : "table-danger";
+    return !e || Math.abs(e) < 4 ? "" : e < 0 ? "table-success " : "table-danger";
 });
 
-Handlebars.registerHelper("friendlyName", e =>
-    e.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase())
-);
+Handlebars.registerHelper("friendlyName", e => {
+    if (e.length <= 3) return e.toUpperCase();
+    return e.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+});
 
 Handlebars.registerHelper("toPercentBadge", e => {
     const rounded = Math.round(e);
@@ -23,8 +24,11 @@ Handlebars.registerHelper("toPercentBadge", e => {
 });
 
 Handlebars.registerHelper("dateFormat", t => {
-    // from unix timestamp
-    return new Date(t).toLocaleString();
+    const date = new Date(t);
+    return (
+        `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()} ` +
+        date.toLocaleTimeString()
+    );
 });
 
 Handlebars.registerHelper("urlPath", t => {
@@ -64,10 +68,13 @@ function buildRequestTypeSummary(tracingData) {
 function constructReportData(
     previousTiming,
     currentTiming,
+    previousMetrics,
+    currentMetrics,
     previousTracing,
     currentTracing
 ) {
     const timingDiff = diff.diffMetrics(previousTiming, currentTiming);
+    const metricsDiff = diff.diffMetrics(previousMetrics, currentMetrics);
     const tracingDiff = diff.diffMetrics(previousTracing, currentTracing);
 
     const previousRequestTypeSummary = buildRequestTypeSummary(previousTracing);
@@ -96,6 +103,7 @@ function constructReportData(
 
     return {
         timingDiff: Object.entries(timingDiff).map(e => ({ metric: e[0], ...e[1] })),
+        metricsDiff: Object.entries(metricsDiff).map(e => ({ metric: e[0], ...e[1] })),
         tracingDiff: {
             overview,
             typeOverview
@@ -131,6 +139,8 @@ function generatePageLoadReport(previousRunData, currentRunData) {
     const res = constructReportData(
         removeNotAllowedFields(previousRunData.timings),
         removeNotAllowedFields(currentRunData.timings),
+        previousRunData.metrics,
+        currentRunData.metrics,
         previousRunData.tracing,
         currentRunData.tracing
     );

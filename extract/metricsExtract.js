@@ -23,11 +23,8 @@ const getMeasureFromPerformanceMetrics = (metrics, name) =>
     metrics.metrics.find(x => x.name === name).value;
 
 // from chrome specific metrics
-function extractMeasuresFromPerfMetrics(metrics) {
-    const navigationStart = getTimeFromPerformanceMetrics(
-        metrics,
-        "NavigationStart"
-    );
+function extractTimingsFromPerfMetrics(metrics) {
+    const navigationStart = getTimeFromPerformanceMetrics(metrics, "NavigationStart");
 
     const extractedData = {};
     CHROME_TIMING_FIELDS.forEach(name => {
@@ -39,11 +36,15 @@ function extractMeasuresFromPerfMetrics(metrics) {
         extractedData[name] = getTimeFromPerformanceMetrics(metrics, name);
     });
 
+    // all measurements in ms
+    return extractedData;
+}
+
+function extractMeasuresFromPerfMetrics(metrics) {
+    const extractedData = {};
     CHROME_METRIC_FIELDS.forEach(name => {
         extractedData[name] = getMeasureFromPerformanceMetrics(metrics, name);
     });
-
-    // all measurements in ms
     return extractedData;
 }
 
@@ -54,8 +55,7 @@ function extractMeasuresFromWindowMetrics(metrics) {
         request: metrics.responseStart - metrics.requestStart,
         response: metrics.responseEnd - metrics.responseStart,
         domLoaded: metrics.domComplete - metrics.domLoading,
-        domContentLoaded:
-            metrics.domContentLoadedEventEnd - metrics.navigationStart,
+        domContentLoaded: metrics.domContentLoadedEventEnd - metrics.navigationStart,
         domInteractive: metrics.domInteractive - metrics.navigationStart,
         pageLoad: metrics.loadEventEnd - metrics.loadEventStart,
         fullTime: metrics.loadEventEnd - metrics.navigationStart
@@ -63,6 +63,7 @@ function extractMeasuresFromWindowMetrics(metrics) {
 }
 
 module.exports = {
+    extractTimingsFromPerfMetrics,
     extractMeasuresFromPerfMetrics,
     extractMeasuresFromWindowMetrics
 };

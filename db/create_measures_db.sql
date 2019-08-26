@@ -23,6 +23,7 @@ CREATE TABLE "load_measure"
   "jSHeapUsedSize" INTEGER,
 
   "timingsReport" TEXT,
+  "metricsReport" TEXT,
 
   "numberRequests" INTEGER,
   "totalEncodedSize" REAL,

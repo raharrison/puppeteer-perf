@@ -43,6 +43,7 @@ module.exports = {
                 recalcStyleCount, 
                 jSHeapUsedSize, 
                 timingsReport,
+                metricsReport,
 
                 numberRequests, 
                 totalEncodedSize, 
@@ -50,10 +51,10 @@ module.exports = {
                 totalRequestDuration, 
                 requestsReport)
                 VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
             )`;
 
-            const { timings, tracing } = runData;
+            const { timings, metrics, tracing } = runData;
             const values = [
                 runData.testName,
                 runData.url,
@@ -66,13 +67,14 @@ module.exports = {
                 timings.recalcStyleDuration,
                 timings.scriptDuration,
                 timings.taskDuration,
-                timings.documents,
-                timings.jSEventListeners,
-                timings.nodes,
-                timings.layoutCount,
-                timings.recalcStyleCount,
-                timings.jSHeapUsedSize,
+                metrics.documents,
+                metrics.jSEventListeners,
+                metrics.nodes,
+                metrics.layoutCount,
+                metrics.recalcStyleCount,
+                metrics.jSHeapUsedSize,
                 JSON.stringify(timings),
+                JSON.stringify(metrics),
 
                 tracing.numberRequests,
                 tracing.totalEncodedSize,
@@ -106,6 +108,7 @@ module.exports = {
                         url: row.url,
                         runTime: row.runTime,
                         timings: JSON.parse(row.timingsReport),
+                        metrics: JSON.parse(row.metricsReport),
                         tracing: JSON.parse(row.requestsReport)
                     });
                 }
