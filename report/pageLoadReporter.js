@@ -27,6 +27,12 @@ Handlebars.registerHelper("dateFormat", t => {
     return new Date(t).toLocaleString();
 });
 
+Handlebars.registerHelper("urlPath", t => {
+    if (!t) return t;
+    const url = new URL(t);
+    return (url.pathname + url.search).slice(0, 85);
+});
+
 const buildTemplate = name => {
     const src = fs.readFileSync(`report/templates/${name}`, "utf8");
     return Handlebars.compile(src);

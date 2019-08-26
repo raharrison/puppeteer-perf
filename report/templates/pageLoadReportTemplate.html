@@ -24,12 +24,20 @@
     <body>
         <div class="container mt-4">
             <h1 class="mb-4">Page Load Performance: '{{ testName }}'</h1>
-            <ul>
-                <li>URL: {{ url }}</li>
-                <li>Current Report Date: {{dateFormat currentRunTime }}</li>
-                <li>Previous Report Date: {{dateFormat previousRunTime }}</li>
+            <ul class="list-inline">
+                <li class="list-inline-item">
+                    <span class="font-weight-bold">URL: </span>{{ url }}
+                </li>
+                <li class="list-inline-item">
+                    <span class="font-weight-bold">Current Report Date: </span
+                    >{{dateFormat currentRunTime }}
+                </li>
+                <li class="list-inline-item">
+                    <span class="font-weight-bold">Previous Report Date: </span
+                    >{{dateFormat previousRunTime }}
+                </li>
             </ul>
-            <ul class="nav nav-pills nav-fill" id="navTabs" role="tablist">
+            <ul class="nav nav-pills nav-fill text-uppercase" id="navTabs" role="tablist">
                 <li class="nav-item">
                     <a
                         class="nav-link active"
@@ -39,15 +47,17 @@
                         >Overview</a
                     >
                 </li>
+                {{#tracingDiff.typeOverview}}
                 <li class="nav-item">
                     <a
                         class="nav-link"
-                        id="breakdown-tab"
+                        id="{{ type }}-tab"
                         data-toggle="tab"
-                        href="#breakdown"
-                        >Breakdown</a
+                        href="#{{ type }}"
+                        >{{friendlyName type }}</a
                     >
                 </li>
+                {{/tracingDiff.typeOverview}}
             </ul>
 
             <div class="tab-content" id="pageLoadTabContent">
@@ -83,27 +93,6 @@
                                                         <td>{{ current }}</td>
                                                         <td>
                                                             {{{toPercentBadge changePercent
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                                                             }}}
                                                         </td>
                                                     </tr>
@@ -141,32 +130,6 @@
                                                         <td>{{ current }}</td>
                                                         <td>
                                                             {{{toPercentBadge changePercent
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                                                             }}}
                                                         </td>
                                                     </tr>
@@ -181,14 +144,14 @@
                     </div>
                 </div>
 
+                {{#tracingDiff.typeOverview}}
                 <div
                     class="tab-pane fade"
-                    id="breakdown"
+                    id="{{ type }}"
                     role="tabpanel"
-                    aria-labelledby="breakdown-tab"
+                    aria-labelledby="{{ type }}-tab"
                 >
                     <div class="container mt-4 mb-4">
-                        {{#tracingDiff.typeOverview}}
                         <div class="row mt-3">
                             <div class="col-sm-12">
                                 <div class="card">
@@ -218,31 +181,6 @@
                                                         <td>{{ current }}</td>
                                                         <td>
                                                             {{{toPercentBadge changePercent
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                                                             }}}
                                                         </td>
                                                     </tr>
@@ -274,7 +212,9 @@
                                                                 class="{{tableRowClass changePercent}}"
                                                             >
                                                                 <td>{{@index}}</td>
-                                                                <td>{{limit url 85 }}</td>
+                                                                <td>
+                                                                    {{urlPath url }}
+                                                                </td>
                                                                 <td>
                                                                     {{ value }} {{ unit }}
                                                                 </td>
@@ -305,7 +245,9 @@
                                                                 class="{{tableRowClass changePercent}}"
                                                             >
                                                                 <td>{{@index}}</td>
-                                                                <td>{{limit url 85 }}</td>
+                                                                <td>
+                                                                    {{urlPath url }}
+                                                                </td>
                                                                 <td>
                                                                     {{ value }} {{ unit }}
                                                                 </td>
@@ -321,9 +263,9 @@
                                 </div>
                             </div>
                         </div>
-                        {{/tracingDiff.typeOverview}}
                     </div>
                 </div>
+                {{/tracingDiff.typeOverview}}
             </div>
         </div>
         <script
