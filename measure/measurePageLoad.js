@@ -66,7 +66,7 @@ const processPerfData = async (
     await measureStore.reportData(runData);
     console.log("Saved run details id: " + runData.id);
 
-    reporter.generatePageLoadReport(previousRunData, runData);
+    await reporter.generatePageLoadReport(previousRunData, runData);
     return runData;
 };
 

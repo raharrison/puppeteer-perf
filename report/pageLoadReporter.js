@@ -1,6 +1,7 @@
 const fs = require("fs");
 const diff = require("../utils/diff");
 const Handlebars = require("handlebars");
+const measureStore = require("../db/measureStore");
 
 Handlebars.registerHelper("limit", (e, max) => e && e.slice(0, max || 100));
 
@@ -65,7 +66,15 @@ function buildRequestTypeSummary(tracingData) {
     return breakdown;
 }
 
-function constructReportData(
+async function buildMetricTrends(testName) {
+    return [
+        await measureStore.getMetricTrend(testName, "totalRequestDuration"),
+        await measureStore.getMetricTrend(testName, "totalEncodedSize")
+    ];
+}
+
+async function constructReportData(
+    testName,
     previousTiming,
     currentTiming,
     previousMetrics,
@@ -79,6 +88,8 @@ function constructReportData(
 
     const previousRequestTypeSummary = buildRequestTypeSummary(previousTracing);
     const currentRequestTypeSummary = buildRequestTypeSummary(currentTracing);
+
+    const trends = await buildMetricTrends(testName);
 
     // split between overview metrics and mime type specific
     const overview = Object.entries(tracingDiff)
@@ -107,7 +118,8 @@ function constructReportData(
         tracingDiff: {
             overview,
             typeOverview
-        }
+        },
+        trends
     };
 }
 
@@ -129,14 +141,15 @@ function removeNotAllowedFields(data) {
         }, {});
 }
 
-function generatePageLoadReport(previousRunData, currentRunData) {
+async function generatePageLoadReport(previousRunData, currentRunData) {
     console.log(
         "Generating load time report for previous run id: " +
             previousRunData.id +
             " and current id: " +
             currentRunData.id
     );
-    const res = constructReportData(
+    const res = await constructReportData(
+        currentRunData.testName,
         removeNotAllowedFields(previousRunData.timings),
         removeNotAllowedFields(currentRunData.timings),
         previousRunData.metrics,

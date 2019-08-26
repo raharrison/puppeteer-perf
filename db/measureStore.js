@@ -96,7 +96,7 @@ module.exports = {
         new Promise(async (resolve, reject) => {
             let db = await openConnection();
             db.get(
-                `SELECT * FROM load_measure WHERE testName = ? ORDER BY runTime DESC LIMIT 1`,
+                "SELECT * FROM load_measure WHERE testName = ? ORDER BY runTime DESC LIMIT 1",
                 testName,
                 (err, row) => {
                     if (err) return reject(err.message);
@@ -111,6 +111,21 @@ module.exports = {
                         metrics: JSON.parse(row.metricsReport),
                         tracing: JSON.parse(row.requestsReport)
                     });
+                }
+            );
+
+            await closeConnection(db);
+        }),
+
+    getMetricTrend: (testName, metric) =>
+        new Promise(async (resolve, reject) => {
+            let db = await openConnection();
+            db.all(
+                `SELECT id,testName,runTime,${metric} FROM load_measure WHERE testName = ? ORDER BY runTime LIMIT 10`,
+                testName,
+                (err, rows) => {
+                    if (err) return reject(err.message);
+                    resolve(rows);
                 }
             );
 
