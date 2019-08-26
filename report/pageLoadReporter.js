@@ -66,11 +66,49 @@ function buildRequestTypeSummary(tracingData) {
     return breakdown;
 }
 
-async function buildMetricTrends(testName) {
-    return [
-        await measureStore.getMetricTrend(testName, "totalRequestDuration"),
-        await measureStore.getMetricTrend(testName, "totalEncodedSize")
-    ];
+async function constructTrendChart(testName, id, title, metrics) {
+    const datasets = [];
+    let labels;
+    for (const metric of metrics) {
+        const rawData = await measureStore.getMetricTrend(testName, metric);
+        labels = rawData.map(e => e.id);
+        datasets.push({
+            label: metric,
+            yData: rawData.map(e => e[metric])
+        });
+    }
+    const chart = {
+        chartId: id,
+        chartTitle: title,
+        xData: labels,
+        datasets: datasets
+    };
+    const template = buildTemplate("lineChart.txt");
+    const script = template(chart);
+    chart.script = script;
+    return chart;
+}
+
+async function buildTrendCharts(testName) {
+    const timingChart = await constructTrendChart(
+        testName,
+        "timingTrends",
+        "Timing Trends (ms)",
+        ["totalRequestDuration", "firstMeaningfulPaint", "fullTime", "scriptDuration"]
+    );
+    const metricChart = await constructTrendChart(
+        testName,
+        "metricTrends",
+        "Metric Trends",
+        ["documents", "jSEventListeners", "layoutCount", "numberRequests"]
+    );
+    const requestChart = await constructTrendChart(
+        testName,
+        "requestTrends",
+        "Request Trends (KB)",
+        ["totalEncodedSize", "totalDecodedSize"]
+    );
+    return [timingChart, requestChart, metricChart];
 }
 
 async function constructReportData(
@@ -89,7 +127,7 @@ async function constructReportData(
     const previousRequestTypeSummary = buildRequestTypeSummary(previousTracing);
     const currentRequestTypeSummary = buildRequestTypeSummary(currentTracing);
 
-    const trends = await buildMetricTrends(testName);
+    const trends = await buildTrendCharts(testName);
 
     // split between overview metrics and mime type specific
     const overview = Object.entries(tracingDiff)

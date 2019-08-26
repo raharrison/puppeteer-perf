@@ -121,11 +121,11 @@ module.exports = {
         new Promise(async (resolve, reject) => {
             let db = await openConnection();
             db.all(
-                `SELECT id,testName,runTime,${metric} FROM load_measure WHERE testName = ? ORDER BY runTime LIMIT 10`,
+                `SELECT id,testName,runTime,${metric} FROM load_measure WHERE testName = ? ORDER BY runTime DESC LIMIT 20`,
                 testName,
                 (err, rows) => {
                     if (err) return reject(err.message);
-                    resolve(rows);
+                    resolve(rows.reverse());
                 }
             );
 

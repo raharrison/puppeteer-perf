@@ -9,6 +9,7 @@ const { measurePageLoad } = require("./measure/measurePageLoad");
         await measurePageLoad(browser, "load-homepage", url);
     } catch (error) {
         console.log("An error occurred: " + error);
+        console.log(error.stack);
     } finally {
         if (browser.isConnected()) await browser.close();
     }

@@ -1,0 +1,45 @@
+<script>
+    var config = {
+        type: "line",
+        data: {
+            labels: [{{ xData }}],
+            datasets: [
+                {{#datasets}}
+                {
+                    label: "{{friendlyName label }}",
+                    borderColor: randomColorGenerator(),
+                    data: [{{ yData }}],
+                    fill: false,
+                    lineTension: 0.1
+                },
+                {{/datasets}}
+            ]
+        },
+        options: {
+            responsive: true,
+            tooltips: {
+                mode: "nearest",
+                intersect: false
+            },
+            title: {
+                display: true,
+                fontSize: 24,
+                text: '{{ chartTitle }}'
+            },
+            scales: {
+                yAxes: [
+                    {
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: "{{ chartTitle }}"
+                        }
+                    }
+                ]
+            }
+        }
+    };
+
+    var ctx = document.getElementById("{{ chartId }}").getContext("2d");
+    window.myLine = new Chart(ctx, config);
+</script>
