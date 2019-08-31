@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "jest"
     },
     "author": "",
     "license": "ISC",
@@ -13,7 +13,10 @@
         "es6-weak-map": "^2.0.3",
         "handlebars": "^4.1.2",
         "lodash": "^4.17.15",
-        "puppeteer": "^1.18.1",
+        "puppeteer": "^1.19.0",
         "sqlite3": "^4.0.9"
+    },
+    "devDependencies": {
+        "jest": "^24.9.0"
     }
 }
