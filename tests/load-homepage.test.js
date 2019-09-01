@@ -4,7 +4,7 @@ const { measurePageLoad } = require("../measure/measurePageLoad");
 let browser;
 
 beforeAll(async () => {
-    console.log("Closing browser");
+    console.log("Opening browser");
     browser = await puppeteer.launch();
 });
 
@@ -13,7 +13,7 @@ afterAll(async () => {
     if (browser && browser.isConnected()) await browser.close();
 });
 
-describe("Load Homepage", async () => {
+describe("Load Homepage", () => {
     let runData;
     beforeAll(async () => {
         const url = "https://ryanharrison.co.uk";

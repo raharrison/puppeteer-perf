@@ -85,6 +85,8 @@ module.exports = {
         const perfMetrics = await capturePerformanceMetrics(page, client);
         const tracingMetrics = await captureTracingMetrics();
 
+        await page.close();
+
         console.log("Metrics captured, processing...");
 
         return await processPerfData(
