@@ -3,6 +3,7 @@ const diff = require("../utils/diff");
 const Handlebars = require("handlebars");
 require("./handlebarsHelpers");
 const measureStore = require("../db/measureStore");
+const buildVendor = require("./buildVendor");
 
 const buildTemplate = name => {
     const src = fs.readFileSync(`report/templates/${name}`, "utf8");
@@ -173,6 +174,7 @@ function removeNotAllowedFields(data) {
 }
 
 async function generatePageLoadReport(previousRunData, currentRunData) {
+    const testName = currentRunData.testName;
     console.log(
         "Generating load time report for previous run id: " +
             previousRunData.id +
@@ -188,13 +190,16 @@ async function generatePageLoadReport(previousRunData, currentRunData) {
         previousRunData.tracing,
         currentRunData.tracing
     );
-    res.testName = currentRunData.testName;
+    res.testName = testName;
     res.url = currentRunData.url;
     res.currentRunTime = currentRunData.runTime;
     res.previousRunTime = previousRunData.runTime;
     const template = buildTemplate("pageLoadReportTemplate.html");
+    const vendor = await buildVendor();
+    Object.assign(res, vendor);
+
     const doc = template(res);
-    fs.writeFileSync("generated/pageLoad.html", doc);
+    fs.writeFileSync(`generated/${testName}.html`, doc);
     // console.log(JSON.stringify(res, null, 2));
 }
 
