@@ -199,7 +199,7 @@ async function generatePageLoadReport(previousRunData, currentRunData) {
     Object.assign(res, vendor);
 
     const doc = template(res);
-    fs.writeFileSync(`generated/${testName}.html`, doc);
+    fs.writeFileSync(`generated/pageload/${testName}.html`, doc);
     // console.log(JSON.stringify(res, null, 2));
 }
 
