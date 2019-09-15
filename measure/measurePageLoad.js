@@ -10,9 +10,20 @@ const TRACING_LOCATION = "./trace.json";
 async function initPage(browser) {
     const page = await browser.newPage();
     await page.setCacheEnabled(false);
+    return page;
+}
+
+async function initPageWithMonitor(browser) {
+    const page = await initPage(browser);
     const client = await page.target().createCDPSession();
     await client.send("Performance.enable");
     return { client, page };
+}
+
+async function bootstrapUrl(browser, url) {
+    console.log("Bootstrapping page load");
+    const page = await initPage(browser);
+    await page.goto(url, { waitUntil: "networkidle0" });
 }
 
 async function captureWindowTimings(page) {
@@ -45,12 +56,13 @@ const processPerfData = async (
     testName,
     url,
     windowTimings,
-    performanceMetrics,
+    perfTimings,
+    perfMetrics,
     tracingMetrics
 ) => {
     const timingMetrics = normalize.normalizeMetrics({
         ...windowTimings,
-        ...performanceMetrics.perfTimings
+        ...perfTimings
     });
 
     const runData = {
@@ -58,7 +70,7 @@ const processPerfData = async (
         url,
         runTime: new Date().getTime(),
         timings: timingMetrics,
-        metrics: normalize.normalizeMetrics(performanceMetrics.perfMetrics),
+        metrics: normalize.normalizeMetrics(perfMetrics),
         tracing: normalize.deepRound(tracingMetrics)
     };
 
@@ -70,31 +82,56 @@ const processPerfData = async (
     return runData;
 };
 
+async function runPageLoad(browser, url) {
+    const { page, client } = await initPageWithMonitor(browser);
+    await page.tracing.start({ path: TRACING_LOCATION });
+
+    console.log("Loading url: " + url);
+    await page.goto(url, { waitUntil: "networkidle0" });
+
+    await page.tracing.stop();
+
+    console.log("URL loaded, capturing metrics...");
+    const windowTimings = await captureWindowTimings(page);
+    const perfMetrics = await capturePerformanceMetrics(page, client);
+    const tracingMetrics = await captureTracingMetrics();
+
+    await page.close();
+
+    console.log("Metrics captured, processing...");
+    return { windowTimings, perfMetrics, tracingMetrics };
+}
+
 module.exports = {
-    measurePageLoad: async (browser, testName, url) => {
-        const { page, client } = await initPage(browser);
-        await page.tracing.start({ path: TRACING_LOCATION });
+    measurePageLoad: async (browser, testName, url, iterations = 1) => {
+        await bootstrapUrl(browser, url);
 
-        console.log("Loading url: " + url);
-        await page.goto(url, { waitUntil: "networkidle0" });
+        console.log(`Running '${testName}' page load for ${iterations} iterations`);
 
-        await page.tracing.stop();
+        let tracingMetricsResult;
+        const windowTimingsResults = [];
+        const perfTimingResults = [];
+        const perfMetricsResults = [];
 
-        console.log("URL loaded, capturing metrics...");
-        const windowTimings = await captureWindowTimings(page);
-        const perfMetrics = await capturePerformanceMetrics(page, client);
-        const tracingMetrics = await captureTracingMetrics();
-
-        await page.close();
-
-        console.log("Metrics captured, processing...");
+        for (let i = 0; i < iterations; i++) {
+            console.log("Executing iteration: " + i + 1);
+            const { windowTimings, perfMetrics, tracingMetrics } = await runPageLoad(
+                browser,
+                url
+            );
+            windowTimingsResults.push(windowTimings);
+            perfTimingResults.push(perfMetrics.perfTimings);
+            perfMetricsResults.push(perfMetrics.perfMetrics);
+            tracingMetricsResult = tracingMetrics;
+        }
 
         return await processPerfData(
             testName,
             url,
-            windowTimings,
-            perfMetrics,
-            tracingMetrics
+            normalize.averageValues(windowTimingsResults),
+            normalize.averageValues(perfTimingResults),
+            normalize.averageValues(perfMetricsResults),
+            tracingMetricsResult
         );
     }
 };

@@ -6,7 +6,7 @@ const { measurePageLoad } = require("./measure/measurePageLoad");
     try {
         browser = await puppeteer.launch();
         const url = "https://ryanharrison.co.uk";
-        await measurePageLoad(browser, "load-homepage", url);
+        await measurePageLoad(browser, "load-homepage", url, 3);
     } catch (error) {
         console.log("An error occurred: " + error);
         console.log(error.stack);

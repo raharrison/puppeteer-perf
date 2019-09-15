@@ -24,7 +24,22 @@ const deepRound = metrics => {
     });
 };
 
+const averageValues = values => {
+    const result = {};
+    if (values.length == 0) return values;
+    const keys = Object.keys(values[0]);
+    for (const key of keys) {
+        let sum = 0;
+        for (const val of values) {
+            sum += val[key];
+        }
+        result[key] = sum / values.length;
+    }
+    return result;
+};
+
 module.exports = {
     normalizeMetrics,
-    deepRound
+    deepRound,
+    averageValues
 };

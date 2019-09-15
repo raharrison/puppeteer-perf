@@ -1,3 +1,5 @@
+jest.setTimeout(30000);
+
 const puppeteer = require("puppeteer");
 const { measurePageLoad } = require("../measure/measurePageLoad");
 
@@ -17,7 +19,7 @@ describe("Load Homepage", () => {
     let runData;
     beforeAll(async () => {
         const url = "https://ryanharrison.co.uk";
-        runData = await measurePageLoad(browser, "load-homepage", url);
+        runData = await measurePageLoad(browser, "load-homepage", url, 3);
     });
 
     test("full page load should be within 1 second", () => {
