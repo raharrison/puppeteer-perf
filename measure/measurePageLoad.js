@@ -76,7 +76,7 @@ module.exports = {
         await page.tracing.start({ path: TRACING_LOCATION });
 
         console.log("Loading url: " + url);
-        await page.goto(url);
+        await page.goto(url, { waitUntil: "networkidle0" });
 
         await page.tracing.stop();
 
