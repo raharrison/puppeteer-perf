@@ -1,8 +1,16 @@
-const _ = require("lodash/object");
-const deepMap = require("deep-map");
+const { map, isArray, isObject, isPlainObject, mapValues, transform } = require("lodash");
+
+const mapValuesDeep = (obj, fn, key) =>
+    isArray(obj)
+        ? map(obj, (innerObj, idx) => mapValuesDeep(innerObj, fn, idx))
+        : isPlainObject(obj)
+        ? mapValues(obj, (val, key) => mapValuesDeep(val, fn, key))
+        : isObject(obj)
+        ? obj
+        : fn(obj, key);
 
 const normalizeMetrics = metrics => {
-    return _.transform(metrics, (r, v, k) => {
+    return transform(metrics, (r, v, k) => {
         const lowerKey = k.charAt(0).toLowerCase() + k.slice(1);
         if (typeof v === "number") r[lowerKey] = Math.round(v);
         else r[lowerKey] = v;
@@ -10,7 +18,7 @@ const normalizeMetrics = metrics => {
 };
 
 const deepRound = metrics => {
-    return deepMap(metrics, v => {
+    return mapValuesDeep(metrics, v => {
         if (typeof v === "number") return Math.round(v);
         else return v;
     });
