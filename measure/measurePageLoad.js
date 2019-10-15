@@ -1,7 +1,7 @@
 const fs = require("fs").promises;
 const metricsExtract = require("../extract/metricsExtract");
 const tracingExtract = require("../extract/traceExtract");
-const measureStore = require("../db/measureStore");
+const measureStore = require("../db/flat/measureStore");
 const normalize = require("../utils/normalize");
 const reporter = require("../report/pageLoadReporter");
 
@@ -114,7 +114,7 @@ module.exports = {
         const perfMetricsResults = [];
 
         for (let i = 0; i < iterations; i++) {
-            console.log("Executing iteration: " + i + 1);
+            console.log("Executing iteration: " + (i + 1));
             const { windowTimings, perfMetrics, tracingMetrics } = await runPageLoad(
                 browser,
                 url

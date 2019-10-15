@@ -2,4 +2,5 @@ package-lock.json
 node_modules/
 trace.json
 data.db
+data.json
 generated/

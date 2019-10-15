@@ -2,7 +2,7 @@ const fs = require("fs");
 const diff = require("../utils/diff");
 const Handlebars = require("handlebars");
 require("./handlebarsHelpers");
-const measureStore = require("../db/measureStore");
+const measureStore = require("../db/flat/measureStore");
 const buildVendor = require("./buildVendor");
 
 const buildTemplate = name => {
@@ -199,7 +199,9 @@ async function generatePageLoadReport(previousRunData, currentRunData) {
     Object.assign(res, vendor);
 
     const doc = template(res);
-    fs.writeFileSync(`generated/pageload/${testName}.html`, doc);
+    const filename = `generated/pageload/${testName}.html`;
+    fs.writeFileSync(filename, doc);
+    console.log("Page load report written to: " + filename);
     // console.log(JSON.stringify(res, null, 2));
 }
 
