@@ -39,7 +39,9 @@ describe("Load Homepage", () => {
 ```
 ## Reports
 
-Each test run will also generate a report allowing you to track key indicators through time:
+Each test run will also generate a report allowing you to track key indicators through time. See `sample/` directory for example report.
+
+![Sample Page Load report](sample/perf_report.png)
 
 
 
