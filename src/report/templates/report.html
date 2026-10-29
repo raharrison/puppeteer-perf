@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Performance Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .metric-card { margin-bottom: 1.25rem; }
+        .badge { font-size: 0.85em; }
+        canvas { max-height: 380px; }
+        .nav-tabs .nav-link { font-weight: 500; }
+        .table th { white-space: nowrap; }
+        .val { font-variant-numeric: tabular-nums; }
+        .url-cell { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid px-4 py-3" id="app"></div>
+
+    <script>const DATA = "__REPORT_DATA__";</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+    const COLORS = ["#4dc9f6","#f67019","#f53794","#537bc4","#acc236","#166a8f","#00a950","#58595b","#8549ba"];
+
+    // --- Formatting ---
+
+    const ACRONYMS = { cls:"CLS", ttfb:"TTFB", fcp:"FCP", lcp:"LCP", xhr:"XHR", js:"JavaScript", css:"CSS" };
+
+    function friendlyName(s) {
+        if (!s) return "";
+        if (ACRONYMS[s]) return ACRONYMS[s];
+        if (s.length <= 3) return s.toUpperCase();
+        return s.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
+    }
+
+    const TIME_METRICS = new Set([
+        "ttfb","fcp","lcp","domContentLoaded","domComplete","fullTime",
+        "layoutDuration","recalcStyleDuration","scriptDuration","taskDuration",
+        "totalRequestDuration","averageRequestDuration"
+    ]);
+    const SIZE_KB_METRICS = new Set(["totalEncodedSize","totalDecodedSize"]);
+
+    function formatValue(metric, value) {
+        if (value == null) return "-";
+        if (typeof value !== "number") return value;
+        if (TIME_METRICS.has(metric)) return value >= 1000 ? (value/1000).toFixed(2) + " s" : Math.round(value) + " ms";
+        if (SIZE_KB_METRICS.has(metric)) return value >= 1024 ? (value/1024).toFixed(1) + " MB" : value.toFixed(1) + " KB";
+        if (metric === "jsHeapUsedSize") {
+            if (value >= 1_048_576) return (value/1_048_576).toFixed(1) + " MB";
+            if (value >= 1024) return (value/1024).toFixed(0) + " KB";
+            return value + " B";
+        }
+        if (metric === "cls") return value.toFixed(3);
+        return Number.isInteger(value) ? value.toLocaleString("en-GB") : value.toFixed(1);
+    }
+
+    function percentBadge(pct) {
+        if (pct == null) return `<span class="badge bg-secondary">new</span>`;
+        const r = Math.round(pct);
+        const label = r > 0 ? "+" + r : r;
+        const cls = r < 0 ? "bg-success" : r > 0 ? "bg-danger" : "bg-secondary";
+        return `<span class="badge ${cls}">${label}%</span>`;
+    }
+
+    function rowClass(pct) {
+        if (pct == null || Math.abs(pct) < 4) return "";
+        return pct < 0 ? "table-success" : "table-danger";
+    }
+
+    function formatDate(ts) {
+        return new Date(ts).toLocaleString("en-GB", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    }
+
+    function urlPath(url) {
+        if (!url) return "";
+        try { const u = new URL(url); return (u.pathname + u.search).slice(0, 85); }
+        catch { return url.slice(0, 85); }
+    }
+
+    // --- DOM helpers ---
+
+    function h(tag, attrs, ...children) {
+        const el = document.createElement(tag);
+        if (attrs) for (const [k, v] of Object.entries(attrs)) {
+            if (k === "html") { el.innerHTML = v; continue; }
+            if (k === "cls") { el.className = v; continue; }
+            el.setAttribute(k, v);
+        }
+        for (const c of children) {
+            if (typeof c === "string") el.append(c);
+            else if (c) el.append(c);
+        }
+        return el;
+    }
+
+    function diffTable(rows) {
+        const thead = `<thead><tr><th>Metric</th><th class="text-end">Prev</th><th class="text-end">Current</th><th class="text-end">Change</th></tr></thead>`;
+        const tbody = rows.map(r => `
+            <tr class="${rowClass(r.changePercent)}">
+                <td>${friendlyName(r.metric)}</td>
+                <td class="text-end val">${formatValue(r.metric, r.previous)}</td>
+                <td class="text-end val">${formatValue(r.metric, r.current)}</td>
+                <td class="text-end">${percentBadge(r.changePercent)}</td>
+            </tr>`).join("");
+        const table = h("table", { cls: "table table-striped table-sm mb-0", html: thead + "<tbody>" + tbody + "</tbody>" });
+        return table;
+    }
+
+    function card(title, ...content) {
+        const c = h("div", { cls: "card metric-card" });
+        c.append(h("div", { cls: "card-header fw-semibold" }, title));
+        const body = h("div", { cls: "card-body p-0" });
+        for (const el of content) body.append(el);
+        c.append(body);
+        return c;
+    }
+
+    function chartCard(trend) {
+        const c = h("div", { cls: "card metric-card" });
+        const body = h("div", { cls: "card-body" });
+        const canvas = h("canvas", { id: trend.id, height: "90" });
+        body.append(canvas);
+        c.append(body);
+        return c;
+    }
+
+    function breakdownTable(items) {
+        if (!items || !items.length) return h("p", { cls: "text-body-secondary small" }, "No data");
+        const rows = items.map((r, i) =>
+            `<tr><td>${i + 1}</td><td class="url-cell">${urlPath(r.url)}</td><td class="text-end val">${typeof r.value === "number" ? r.value.toFixed(2) : r.value} ${r.unit}</td></tr>`
+        ).join("");
+        return h("table", { cls: "table table-striped table-sm",
+            html: `<thead><tr><th>#</th><th>URL</th><th class="text-end">Value</th></tr></thead><tbody>${rows}</tbody>` });
+    }
+
+    // --- Charts ---
+
+    function renderChart(trend) {
+        const ctx = document.getElementById(trend.id);
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: trend.labels,
+                datasets: trend.datasets.map((ds, i) => ({
+                    label: friendlyName(ds.label),
+                    borderColor: COLORS[i % COLORS.length],
+                    backgroundColor: COLORS[i % COLORS.length] + "20",
+                    data: ds.data,
+                    tension: 0.2,
+                })),
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, font: { size: 16, weight: "normal" }, text: trend.title },
+                    tooltip: { mode: "nearest", intersect: false },
+                },
+                scales: { y: { title: { display: true, text: trend.title } } },
+            },
+        });
+    }
+
+    // --- Build page ---
+
+    function render() {
+        const app = document.getElementById("app");
+        document.title = `Performance Report - ${DATA.testName}`;
+
+        // Header
+        const header = h("div", { cls: "d-flex justify-content-between align-items-start mb-4" });
+        header.append(
+            h("div", null,
+                h("h1", { cls: "h3 mb-1" }, DATA.testName),
+                h("p", { cls: "text-body-secondary mb-0" }, DATA.url)),
+            h("div", { cls: "text-end text-body-secondary small", html:
+                `<div><strong>Run #${DATA.currentRun.id}</strong> - ${formatDate(DATA.currentRun.time)}</div>` +
+                `<div>Previous: #${DATA.previousRun.id} - ${formatDate(DATA.previousRun.time)}</div>` })
+        );
+        app.append(header);
+
+        // Tabs
+        const tabList = h("ul", { cls: "nav nav-tabs mb-4", role: "tablist" });
+        const tabContent = h("div", { cls: "tab-content" });
+
+        // Overview tab
+        tabList.append(h("li", { cls: "nav-item" },
+            h("button", { cls: "nav-link active", "data-bs-toggle": "tab", "data-bs-target": "#overview" }, "Overview")));
+
+        const overview = h("div", { cls: "tab-pane fade show active", id: "overview" });
+
+        // Overview cards row
+        const row = h("div", { cls: "row" });
+        const col1 = h("div", { cls: "col-lg-4" }); col1.append(card("Timings", diffTable(DATA.timings)));
+        const col2 = h("div", { cls: "col-lg-4" }); col2.append(card("Page Metrics", diffTable(DATA.metrics)));
+        const col3 = h("div", { cls: "col-lg-4" }); col3.append(card("Requests", diffTable(DATA.requests.overview)));
+        row.append(col1, col2, col3);
+        overview.append(row);
+
+        // Overview trend charts
+        for (const trend of DATA.overviewTrends) {
+            overview.append(chartCard(trend));
+        }
+        tabContent.append(overview);
+
+        // Per-type tabs
+        for (const type of DATA.requests.types) {
+            tabList.append(h("li", { cls: "nav-item" },
+                h("button", { cls: "nav-link", "data-bs-toggle": "tab", "data-bs-target": "#tab-" + type.type },
+                    friendlyName(type.type))));
+
+            const pane = h("div", { cls: "tab-pane fade", id: "tab-" + type.type });
+
+            // Summary table
+            const typeRow = h("div", { cls: "row" });
+            const typeCol = h("div", { cls: "col-lg-6" });
+            typeCol.append(card(friendlyName(type.type) + " Requests", diffTable(type.summary)));
+            typeRow.append(typeCol);
+            pane.append(typeRow);
+
+            // Breakdowns
+            for (const bd of type.breakdown) {
+                pane.append(h("h6", { cls: "mt-3 fw-semibold" }, friendlyName(bd.metric)));
+                const bdRow = h("div", { cls: "row" });
+                const prevCol = h("div", { cls: "col-lg-6" });
+                prevCol.append(h("p", { cls: "text-body-secondary small mb-1" }, "Previous"), breakdownTable(bd.previous));
+                const currCol = h("div", { cls: "col-lg-6" });
+                currCol.append(h("p", { cls: "text-body-secondary small mb-1" }, "Current"), breakdownTable(bd.current));
+                bdRow.append(prevCol, currCol);
+                pane.append(bdRow);
+            }
+
+            // Type trend charts
+            for (const trend of type.trends) {
+                pane.append(chartCard(trend));
+            }
+            tabContent.append(pane);
+        }
+
+        app.append(tabList, tabContent);
+
+        // Render all charts after DOM is built
+        for (const t of DATA.overviewTrends) renderChart(t);
+        for (const type of DATA.requests.types) {
+            for (const t of type.trends) renderChart(t);
+        }
+    }
+
+    render();
+    </script>
+</body>
+</html>
